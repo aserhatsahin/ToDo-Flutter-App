@@ -63,29 +63,27 @@ class _HomePageState extends State<HomePage> {
   List<Todo> createFilteredList(List<String> selTags) {
     final now = DateTime.now();
     filteredTodoList.clear();
-
     for (int i = 0; i < todo.length; i++) {
       Todo currentTask = todo[i];
 
-      bool isDateMatch = _selectedDate != null &&
-          currentTask.dueDate.year == _selectedDate.year &&
+      bool isDateMatch = currentTask.dueDate.year == _selectedDate.year &&
           currentTask.dueDate.month == _selectedDate.month &&
           currentTask.dueDate.day == _selectedDate.day;
 
-      if ((selTags.contains('Completed') && currentTask.isCompleted) ||
-          (selTags.contains('Incompleted') && !currentTask.isCompleted) ||
-          (selTags.contains('Due') && currentTask.dueDate.isBefore(now)) ||
-          (selTags.contains('Not Due') && currentTask.dueDate.isAfter(now)) ||
-          isDateMatch) {
+      if (isDateMatch &&
+          ((selTags.contains('Completed') && currentTask.isCompleted) ||
+              (selTags.contains('Incompleted') && !currentTask.isCompleted) ||
+              (selTags.contains('Due') && currentTask.dueDate.isBefore(now)) ||
+              (selTags.contains('Not Due') &&
+                  currentTask.dueDate.isAfter(now)) ||
+              selTags.isEmpty)) {
         if (!filteredTodoList.contains(currentTask)) {
           filteredTodoList.add(currentTask);
         }
       }
     }
 
-    return filteredTodoList.isNotEmpty || selTags.isNotEmpty
-        ? filteredTodoList
-        : (_selectedDate != null ? [] : todo);
+    return filteredTodoList;
   }
 
   void loadData() async {
