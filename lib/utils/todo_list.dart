@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:easy_date_timeline/easy_date_timeline.dart';
 
 class ToDoList extends StatelessWidget {
   ToDoList({
@@ -41,20 +40,20 @@ class ToDoList extends StatelessWidget {
                 onPressed: deleteFunction,
                 icon: Icons.delete,
                 borderRadius: BorderRadius.circular(15),
-                backgroundColor: Colors.red.shade300,
+                backgroundColor: Color(0xFF563440),
               ),
               SlidableAction(
                 onPressed: editFunction,
                 icon: Icons.edit,
                 borderRadius: BorderRadius.circular(15),
-                backgroundColor: Colors.red.shade200,
+                backgroundColor: Color(0xFF7A3B69),
               ),
             ],
           ),
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 120, 182, 176),
+              color: const Color(0xFF9A879D),
               borderRadius: BorderRadius.circular(15),
             ),
             child: Row(
@@ -62,7 +61,7 @@ class ToDoList extends StatelessWidget {
                 Checkbox(
                   value: taskCompleted,
                   onChanged: onChanged,
-                  activeColor: const Color.fromARGB(255, 12, 58, 54),
+                  activeColor: const Color(0xFF563440),
                   checkColor: Colors.white,
                   side: const BorderSide(color: Colors.white),
                 ),
@@ -87,7 +86,8 @@ class ToDoList extends StatelessWidget {
                                 ),
                                 decoration: InputDecoration(
                                   border: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Colors.teal),
+                                    borderSide:
+                                        BorderSide(color: Color(0xFF7A3B69)),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   hintText: 'Edit task',
@@ -106,7 +106,7 @@ class ToDoList extends StatelessWidget {
                                     .text); // Call saveFunction when the button is pressed
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.teal,
+                                backgroundColor: Color(0xFF7A3B69),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -126,7 +126,7 @@ class ToDoList extends StatelessWidget {
                             Text(
                               taskName,
                               style: TextStyle(
-                                color: Colors.white,
+                                color: Color.fromARGB(255, 245, 249, 248),
                                 fontSize: 18,
                                 decoration: taskCompleted
                                     ? TextDecoration.lineThrough

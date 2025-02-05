@@ -1,11 +1,13 @@
 import 'dart:core';
-
+import 'package:multiselect/multiselect.dart';
+import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:date_picker_timeline/date_picker_timeline.dart';
 import 'package:todo_list_app/repository/todoRepository.dart';
 import 'package:todo_list_app/utils/todo_list.dart';
 import 'package:todo_list_app/classes/todo.dart';
 
+//NULL SAFETY , FUTUREBUILDER
 class HomePage extends StatefulWidget {
   HomePage({super.key});
 
@@ -142,172 +144,225 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final filteredTodoList = createFilteredList(_selectedTags);
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 146, 221, 202),
+      backgroundColor: const Color(0xFFCFCFCD),
       appBar: AppBar(
-        toolbarHeight: 100,
+        toolbarHeight: 50,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
-              alignment: Alignment.topLeft,
-              padding: EdgeInsets.fromLTRB(25, 20, 0, 10),
+              alignment: Alignment.center,
+              padding: EdgeInsets.fromLTRB(80, 20, 50, 20),
               child: Text(
                 'Simple Todo',
                 style: TextStyle(
-                    fontSize: 14, height: 0.5, fontWeight: FontWeight.bold),
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.fromLTRB(0, 0, 0, 10),
-              child: DatePicker(
-                width: 70,
-                height: 80,
-                DateTime.now().subtract(Duration(days: 7)),
-                activeDates: List.generate(
-                    38,
-                    (index) => (DateTime.now().subtract(Duration(days: 7)))
-                        .add(Duration(days: index))),
-                initialSelectedDate: DateTime.now(),
-                selectionColor: const Color.fromARGB(255, 77, 163, 143),
-                selectedTextColor: Colors.white,
-                daysCount: 38,
-                onDateChange: (date) {
-                  setState(() {
-                    _selectedDate = date;
-                  });
-                },
+                    color: Color(0xFFD7DEDC),
+                    fontSize: 20,
+                    height: 0.5,
+                    fontWeight: FontWeight.bold),
               ),
             ),
           ],
         ),
-        centerTitle: true,
-        backgroundColor: Colors.teal[700],
-        foregroundColor: Colors.white,
-        leading: Builder(builder: (BuildContext context) {
-          return Container(
-            alignment: Alignment.centerLeft,
-            height: 30,
-            width: 30,
-            child: IconButton(
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              },
-              icon: Icon(Icons.filter_list),
-            ),
-          );
-        }),
-      ),
-      drawer: Drawer(
-        child: Container(
-          color: const Color.fromARGB(255, 141, 227, 218),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                height: 300,
-                child: DrawerHeader(
-                  child: Center(
-                    child: Text(
-                      'Filter Options',
-                      style: TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Wrap(
-                  spacing: 8.0,
-                  runSpacing: 8.0,
-                  children: _filterTags.map((tag) {
-                    return SizedBox(
-                      width: 120,
-                      child: FilterChip(
-                        label: Center(child: Text(tag)),
+        actions: [
+          PopupMenuButton<String>(
+            color: const Color.fromARGB(124, 122, 59, 105),
+            icon: Icon(Icons.filter_alt_outlined),
+            itemBuilder: (BuildContext context) {
+              return [
+                PopupMenuItem<String>(
+                  enabled: false,
+                  child: Wrap(
+                    spacing: 10.0,
+                    runSpacing: 6.0,
+                    children: _filterTags.map((tag) {
+                      return FilterChip(
+                        label: Text(tag),
                         selected: _selectedTags.contains(tag),
                         onSelected: (isSelected) {
                           _toggleTag(tag);
-                          setState(() {});
+                          Navigator.pop(context); // Popup'u kapatır
                         },
-                        backgroundColor: Colors.white,
-                        selectedColor: Colors.teal[200],
-                      ),
-                    );
-                  }).toList(),
+                        backgroundColor:
+                            const Color.fromARGB(255, 217, 207, 222),
+                        selectedColor: const Color(0xFF7A3B69),
+                      );
+                    }).toList(),
+                  ),
                 ),
-              ),
-            ],
+              ];
+            },
           ),
-        ),
+        ],
+        centerTitle: true,
+        backgroundColor: Color(0xFF7A3B69),
+        foregroundColor: Color(0xFFD7DEDC),
+        // leading: Builder(builder: (BuildContext context) {
+        //   return Container(
+        //     alignment: Alignment.centerLeft,
+        //     height: 30,
+        //     width: 30,
+        //     child: IconButton(
+        //       onPressed: () {
+        //         Scaffold.of(context).openDrawer();
+        //       },
+        //       icon: Icon(Icons.filter_list),
+        //     ),
+        //   );
+        // }),
       ),
-      body: filteredTodoList.isEmpty
-          ? Column(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-              Text(
-                'There are no tasks that matches the selected filters !!!',
-                style: TextStyle(
-                    fontSize: 50,
-                    color: Colors.red,
-                    fontWeight: FontWeight.bold),
-              )
-            ])
-          : ListView.builder(
-              itemCount: filteredTodoList.isEmpty
-                  ? todo.length
-                  : filteredTodoList.length,
-              itemBuilder: (BuildContext context, index) {
-                final Todo task = filteredTodoList[index];
-                final int originalIndex = todo.indexOf(
-                    task); // dogru liste uzerinde crud islemlerini yapabilmek icin
-
-                return ToDoList(
-                  taskName: task.taskName,
-                  taskCompleted: task.isCompleted,
-                  taskEdit: task.isEdit,
-                  dueDate: task.dueDate,
-                  onChanged: (value) => checkBoxChanged(originalIndex),
-                  deleteFunction: (context) => deleteTask(originalIndex),
-                  editFunction: (context) => editTask(originalIndex),
-                  saveFunction: (newTaskName) =>
-                      saveTask(newTaskName, originalIndex),
-                  editController: TextEditingController(),
-                );
+      // drawer: Drawer(
+      //   child: Container(
+      //     color: const Color.fromARGB(255, 141, 227, 218),
+      //     child: Column(
+      //       crossAxisAlignment: CrossAxisAlignment.start,
+      //       children: [
+      //         SizedBox(
+      //           height: 300,
+      //           child: DrawerHeader(
+      //             child: Center(
+      //               child: Text(
+      //                 'Filter Options',
+      //                 style: TextStyle(
+      //                   fontSize: 30,
+      //                   fontWeight: FontWeight.bold,
+      //                 ),
+      //               ),
+      //             ),
+      //           ),
+      //         ),
+      //         Padding(
+      //           padding: const EdgeInsets.all(8.0),
+      //           child: Wrap(
+      //             spacing: 8.0,
+      //             runSpacing: 8.0,
+      //             children: _filterTags.map((tag) {
+      //               return SizedBox(
+      //                 width: 120,
+      //                 child: FilterChip(
+      //                   label: Center(child: Text(tag)),
+      //                   selected: _selectedTags.contains(tag),
+      //                   onSelected: (isSelected) {
+      //                     _toggleTag(tag);
+      //                     setState(() {});
+      //                   },
+      //                   backgroundColor: Colors.white,
+      //                   selectedColor: Colors.teal[200],
+      //                 ),
+      //               );
+      //             }).toList(),
+      //           ),
+      //         ),
+      //       ],
+      //     ),
+      //   ),
+      // ),
+      body: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.fromLTRB(3, 0, 3, 10),
+            child: DatePicker(
+              width: 100,
+              height: 100,
+              DateTime.now().subtract(Duration(days: 7)),
+              activeDates: List.generate(
+                  38,
+                  (index) => (DateTime.now().subtract(Duration(days: 7)))
+                      .add(Duration(days: index))),
+              initialSelectedDate: DateTime.now(),
+              selectionColor: const Color(0xFF7A3B69),
+              selectedTextColor: Color(0xFFD7DEDC),
+              daysCount: 38,
+              onDateChange: (date) {
+                setState(() {
+                  _selectedDate = date;
+                });
               },
             ),
+          ),
+          Expanded(
+            child: filteredTodoList.isEmpty
+                ? Column(mainAxisAlignment: MainAxisAlignment.start, children: [
+                    Container(
+                      padding: EdgeInsets.fromLTRB(20, 200, 10, 50),
+                      child: AnimatedTextKit(
+                        animatedTexts: [
+                          TyperAnimatedText(
+                            'There are no tasks that matches the selected filters.',
+                            textStyle: TextStyle(
+                              fontSize: 15,
+                              color: const Color(0xFF9A879D),
+                            ),
+                          )
+                        ],
+                        totalRepeatCount: 5,
+                        pause: const Duration(milliseconds: 1000),
+                        displayFullTextOnTap: true,
+                        stopPauseOnTap: true,
+                      ),
+                    )
+                  ])
+                : ListView.builder(
+                    itemCount: filteredTodoList.isEmpty
+                        ? todo.length
+                        : filteredTodoList.length,
+                    itemBuilder: (BuildContext context, index) {
+                      final Todo task = filteredTodoList[index];
+                      final int originalIndex = todo.indexOf(
+                          task); // dogru liste uzerinde crud islemlerini yapabilmek icin
+
+                      return ToDoList(
+                        taskName: task.taskName,
+                        taskCompleted: task.isCompleted,
+                        taskEdit: task.isEdit,
+                        dueDate: task.dueDate,
+                        onChanged: (value) => checkBoxChanged(originalIndex),
+                        deleteFunction: (context) => deleteTask(originalIndex),
+                        editFunction: (context) => editTask(originalIndex),
+                        saveFunction: (newTaskName) =>
+                            saveTask(newTaskName, originalIndex),
+                        editController: TextEditingController(),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Row(
           children: [
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.fromLTRB(20, 20, 0, 0),
                 child: TextField(
                   controller: _controller,
                   decoration: InputDecoration(
                     hintText: 'Add new to-do items',
                     filled: true,
-                    fillColor: const Color.fromARGB(255, 174, 235, 229),
+                    fillColor: const Color.fromARGB(146, 188, 161, 192),
                     enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(
-                          color: const Color.fromARGB(255, 43, 129, 120)),
+                      borderSide: BorderSide(color: const Color(0xFF7A3B69)),
                       borderRadius: BorderRadius.circular(15),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.teal),
+                      borderSide: BorderSide(color: Color(0xFF7A3B69)),
                       borderRadius: BorderRadius.circular(15),
                     ),
                   ),
                 ),
               ),
             ),
-            FloatingActionButton(
-              onPressed: saveNewTask,
-              backgroundColor: Colors.teal.shade800,
-              child: const Icon(
-                Icons.add,
-                color: Colors.white,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(5, 20, 0, 0),
+              child: FloatingActionButton(
+                onPressed: saveNewTask,
+                elevation: 0,
+                backgroundColor: Color(0xFF7A3B69),
+                child: const Icon(
+                  Icons.add,
+                  color: Color(0xFFD7DEDC),
+                ),
               ),
             ),
           ],
