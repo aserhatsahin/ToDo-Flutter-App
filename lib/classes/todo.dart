@@ -10,6 +10,11 @@ class Todo {
       this.isEdit = false,
       required this.dueDate});
 
+  @override
+  String toString() {
+    return 'Todo(taskName: $taskName, isCompleted: $isCompleted, dueDate: $dueDate)';
+  }
+
   Map<String, dynamic> toJson() => {
         'taskName': taskName,
         'isCompleted': isCompleted,

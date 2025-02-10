@@ -65,7 +65,4 @@ class TodoRepository {
 
     saveToDoList(todo);
   }
-
-
-
 }

@@ -54,19 +54,11 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  @override
-  void initState() {
-    super.initState();
-    Future.delayed(Duration.zero, () {
-      loadData();
-    });
-  }
-
-  List<Todo> createFilteredList(List<String> selTags) {
+  List<Todo> createFilteredList(List<String> selTags, List<Todo> snapshotList) {
     final now = DateTime.now();
     filteredTodoList.clear();
-    for (int i = 0; i < todo.length; i++) {
-      Todo currentTask = todo[i];
+    for (int i = 0; i < snapshotList.length; i++) {
+      Todo currentTask = snapshotList[i];
 
       bool isDateMatch = currentTask.dueDate.year == _selectedDate.year &&
           currentTask.dueDate.month == _selectedDate.month &&
@@ -88,11 +80,9 @@ class _HomePageState extends State<HomePage> {
     return filteredTodoList;
   }
 
-  void loadData() async {
-    List<Todo> loadedList = await todoRepo.getAllData();
-    setState(() {
-      todo = loadedList;
-    });
+  Future<List<Todo>> loadData() async {
+    await Future.delayed(Duration(seconds: 1));
+    return await todoRepo.getAllData();
   }
 
   void checkBoxChanged(int index) {
@@ -142,7 +132,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredTodoList = createFilteredList(_selectedTags);
     return Scaffold(
       backgroundColor: const Color(0xFFCFCFCD),
       appBar: AppBar(
@@ -197,66 +186,7 @@ class _HomePageState extends State<HomePage> {
         centerTitle: true,
         backgroundColor: Color(0xFF7A3B69),
         foregroundColor: Color(0xFFD7DEDC),
-        // leading: Builder(builder: (BuildContext context) {
-        //   return Container(
-        //     alignment: Alignment.centerLeft,
-        //     height: 30,
-        //     width: 30,
-        //     child: IconButton(
-        //       onPressed: () {
-        //         Scaffold.of(context).openDrawer();
-        //       },
-        //       icon: Icon(Icons.filter_list),
-        //     ),
-        //   );
-        // }),
       ),
-      // drawer: Drawer(
-      //   child: Container(
-      //     color: const Color.fromARGB(255, 141, 227, 218),
-      //     child: Column(
-      //       crossAxisAlignment: CrossAxisAlignment.start,
-      //       children: [
-      //         SizedBox(
-      //           height: 300,
-      //           child: DrawerHeader(
-      //             child: Center(
-      //               child: Text(
-      //                 'Filter Options',
-      //                 style: TextStyle(
-      //                   fontSize: 30,
-      //                   fontWeight: FontWeight.bold,
-      //                 ),
-      //               ),
-      //             ),
-      //           ),
-      //         ),
-      //         Padding(
-      //           padding: const EdgeInsets.all(8.0),
-      //           child: Wrap(
-      //             spacing: 8.0,
-      //             runSpacing: 8.0,
-      //             children: _filterTags.map((tag) {
-      //               return SizedBox(
-      //                 width: 120,
-      //                 child: FilterChip(
-      //                   label: Center(child: Text(tag)),
-      //                   selected: _selectedTags.contains(tag),
-      //                   onSelected: (isSelected) {
-      //                     _toggleTag(tag);
-      //                     setState(() {});
-      //                   },
-      //                   backgroundColor: Colors.white,
-      //                   selectedColor: Colors.teal[200],
-      //                 ),
-      //               );
-      //             }).toList(),
-      //           ),
-      //         ),
-      //       ],
-      //     ),
-      //   ),
-      // ),
       body: Column(
         children: [
           Container(
@@ -281,35 +211,45 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           Expanded(
-            child: filteredTodoList.isEmpty
-                ? Column(mainAxisAlignment: MainAxisAlignment.start, children: [
-                    Container(
-                      padding: EdgeInsets.fromLTRB(20, 200, 10, 50),
-                      child: AnimatedTextKit(
-                        animatedTexts: [
-                          TyperAnimatedText(
-                            'There are no tasks that matches the selected filters.',
-                            textStyle: TextStyle(
-                              fontSize: 15,
-                              color: const Color(0xFF9A879D),
+            child: FutureBuilder<List<Todo>>(
+              future: loadData(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (snapshot.hasData) {
+                  filteredTodoList =
+                      createFilteredList(_selectedTags, snapshot.data!);
+
+                  if (filteredTodoList.isEmpty) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: AnimatedTextKit(
+                          animatedTexts: [
+                            TyperAnimatedText(
+                              'There are no tasks match the selected filters.',
+                              textStyle: TextStyle(
+                                fontSize: 15,
+                                color: const Color(0xFF9A879D),
+                              ),
                             ),
-                          )
-                        ],
-                        totalRepeatCount: 5,
-                        pause: const Duration(milliseconds: 1000),
-                        displayFullTextOnTap: true,
-                        stopPauseOnTap: true,
+                          ],
+                          totalRepeatCount: 5,
+                          pause: const Duration(milliseconds: 1000),
+                          displayFullTextOnTap: true,
+                          stopPauseOnTap: true,
+                        ),
                       ),
-                    )
-                  ])
-                : ListView.builder(
-                    itemCount: filteredTodoList.isEmpty
-                        ? todo.length
-                        : filteredTodoList.length,
+                    );
+                  }
+
+                  return ListView.builder(
+                    itemCount: filteredTodoList.length,
                     itemBuilder: (BuildContext context, index) {
                       final Todo task = filteredTodoList[index];
-                      final int originalIndex = todo.indexOf(
-                          task); // dogru liste uzerinde crud islemlerini yapabilmek icin
+                      final int originalIndex = snapshot.data!.indexOf(task);
 
                       return ToDoList(
                         taskName: task.taskName,
@@ -324,7 +264,12 @@ class _HomePageState extends State<HomePage> {
                         editController: TextEditingController(),
                       );
                     },
-                  ),
+                  );
+                } else {
+                  return Center(child: Text("Unexpected error occurred."));
+                }
+              },
+            ),
           ),
         ],
       ),
