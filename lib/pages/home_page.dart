@@ -1,5 +1,5 @@
 import 'dart:core';
-import 'package:multiselect/multiselect.dart';
+
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:date_picker_timeline/date_picker_timeline.dart';
@@ -82,11 +82,13 @@ class _HomePageState extends State<HomePage> {
 
   Future<List<Todo>> loadData() async {
     await Future.delayed(Duration(seconds: 1));
+    List<Todo> loadedTodos = await todoRepo.getAllData();
+    print("Loaded Todos from SharedPreferences: $loadedTodos");
     return await todoRepo.getAllData();
   }
 
   void checkBoxChanged(int index) {
-    todoRepo.checkBoxChanged(index, todo);
+    todoRepo.checkBoxChanged(index);
     setState(() {});
   }
 
@@ -99,7 +101,7 @@ class _HomePageState extends State<HomePage> {
       );
 
       if (pickedDate != null) {
-        await todoRepo.addTask(_controller.text, todo, pickedDate);
+        await todoRepo.addTask(_controller.text, pickedDate);
         loadData();
         setState(() {});
         _controller.clear();
@@ -108,7 +110,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void deleteTask(int index) async {
-    await todoRepo.deleteTask(index, todo);
+    await todoRepo.deleteTask(index);
     setState(() {});
   }
 
@@ -120,13 +122,13 @@ class _HomePageState extends State<HomePage> {
     );
 
     if (pickedDate != null) {
-      await todoRepo.editTask(index, todo, pickedDate);
+      await todoRepo.editTask(index, pickedDate);
       setState(() {});
     }
   }
 
   void saveTask(String taskName, int index) async {
-    await todoRepo.saveTask(taskName, index, todo);
+    await todoRepo.saveTask(taskName, index);
     setState(() {});
   }
 

@@ -27,42 +27,50 @@ class TodoRepository {
 
     List<String> jsonList =
         todo.map((todo) => jsonEncode(todo.toJson())).toList();
-//first make the todo list into map<String,dynamic> format and than with the jsonEncode make it a List<String>
+    //first make the todo list into map<String,dynamic> format and than with the jsonEncode make it a List<String>
 
     await prefs.setStringList('todo_list', jsonList);
+
+    print("Saving tasks to SharedPreferences :   $jsonList");
   }
 
-  Future<void> checkBoxChanged(int index, List<Todo> todo) async {
+  Future<void> checkBoxChanged(int index) async {
     //to change checkbox
-    todo[index].isCompleted = !todo[index].isCompleted;
-    saveToDoList(todo);
+    List<Todo> todoList = await getAllData();
+
+    todoList[index].isCompleted = !todoList[index].isCompleted;
+    saveToDoList(todoList);
   }
 
-  Future<void> addTask(String task, List<Todo> todo, DateTime dueDate) async {
+  Future<void> addTask(String task, DateTime dueDate) async {
     if (task != '') {
-      todo.add(Todo(
+      List<Todo> todoList = await getAllData();
+      todoList.add(Todo(
           taskName: task, isCompleted: false, isEdit: false, dueDate: dueDate));
-
-      saveToDoList(todo);
+      print("TASK ADDED SUCCESFULLY ");
+      saveToDoList(todoList);
     }
   }
 
-  Future<void> deleteTask(int index, List<Todo> todo) async {
-    todo.removeAt(index);
+  Future<void> deleteTask(int index) async {
+    List<Todo> todoList = await getAllData();
+    todoList.removeAt(index);
 
-    saveToDoList(todo);
+    saveToDoList(todoList);
   }
 
-  Future<void> editTask(int index, List<Todo> todo, DateTime dueDate) async {
-    todo[index].isEdit = true;
-    todo[index].dueDate = dueDate;
-    saveToDoList(todo);
+  Future<void> editTask(int index, DateTime dueDate) async {
+    List<Todo> todoList = await getAllData();
+    todoList[index].isEdit = true;
+    todoList[index].dueDate = dueDate;
+    saveToDoList(todoList);
   }
 
-  Future<void> saveTask(String taskName, int index, List<Todo> todo) async {
-    todo[index].taskName = taskName;
-    todo[index].isEdit = false;
+  Future<void> saveTask(String taskName, int index) async {
+    List<Todo> todoList = await getAllData();
+    todoList[index].taskName = taskName;
+    todoList[index].isEdit = false;
 
-    saveToDoList(todo);
+    saveToDoList(todoList);
   }
 }
