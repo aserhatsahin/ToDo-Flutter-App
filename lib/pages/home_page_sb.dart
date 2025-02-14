@@ -4,7 +4,7 @@ import 'dart:core';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:date_picker_timeline/date_picker_timeline.dart';
-import 'package:todo_list_app/repository/todoRepository.dart';
+import 'package:todo_list_app/repository/spRepo.dart';
 import 'package:todo_list_app/utils/todo_list.dart';
 import 'package:todo_list_app/classes/todo.dart';
 
@@ -19,22 +19,13 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   DateTime _selectedDate = DateTime.now();
   final _controller = TextEditingController();
-  final TodoRepository todoRepo = TodoRepository();
+  final spRepo todoRepo = spRepo();
+
   final StreamController<List<Todo>> _taskController =
       StreamController.broadcast();
 
-  List<Todo> todo = [
-    Todo(
-        taskName: 'Learn Flutter',
-        isCompleted: false,
-        isEdit: false,
-        dueDate: DateTime(2025, 4, 24)),
-    Todo(
-        taskName: 'Drink Coffee',
-        isCompleted: false,
-        isEdit: false,
-        dueDate: DateTime(2025, 4, 23)),
-  ];
+  List<Todo> todoList = [];
+  List<Todo> filteredTodoList = [];
 
   final List<String> _filterTags = [
     'Due',
@@ -42,8 +33,6 @@ class _HomePageState extends State<HomePage> {
     'Completed',
     'Incompleted'
   ];
-
-  List<Todo> filteredTodoList = [];
 
   final List<String> _selectedTags = [];
 
@@ -70,15 +59,19 @@ class _HomePageState extends State<HomePage> {
   }
 
   void loadData() async {
-    List<Todo> loadedTodos = await todoRepo.getAllData();
-    _taskController.sink.add(loadedTodos);
+    todoList = await todoRepo.getAll();
+    print(" first loaded list: $todoList");
+    filterData(_selectedTags);
   }
 
-  List<Todo> createFilteredList(List<String> selTags, List<Todo> snapshotList) {
+  void filterData(List<String> selTags) async {
+    print("filterdata called");
+    print("previous filtered list length ${filteredTodoList.length}");
     final now = DateTime.now();
     filteredTodoList.clear();
-    for (int i = 0; i < snapshotList.length; i++) {
-      Todo currentTask = snapshotList[i];
+
+    for (int i = 0; i < todoList.length; i++) {
+      Todo currentTask = todoList[i];
 
       bool isDateMatch = currentTask.dueDate.year == _selectedDate.year &&
           currentTask.dueDate.month == _selectedDate.month &&
@@ -96,14 +89,43 @@ class _HomePageState extends State<HomePage> {
         }
       }
     }
-
-    return filteredTodoList;
+    print("filtered list length ${filteredTodoList.length}");
+    _taskController.sink.add(filteredTodoList);
   }
 
+  // List<Todo> createFilteredList(List<String> selTags, List<Todo> snapshotList) {
+  //   final now = DateTime.now();
+  //   filteredTodoList.clear();
+  //   for (int i = 0; i < snapshotList.length; i++) {
+  //     Todo currentTask = snapshotList[i];
+
+  //     bool isDateMatch = currentTask.dueDate.year == _selectedDate.year &&
+  //         currentTask.dueDate.month == _selectedDate.month &&
+  //         currentTask.dueDate.day == _selectedDate.day;
+
+  //     if (isDateMatch &&
+  //         ((selTags.contains('Completed') && currentTask.isCompleted) ||
+  //             (selTags.contains('Incompleted') && !currentTask.isCompleted) ||
+  //             (selTags.contains('Due') && currentTask.dueDate.isBefore(now)) ||
+  //             (selTags.contains('Not Due') &&
+  //                 currentTask.dueDate.isAfter(now)) ||
+  //             selTags.isEmpty)) {
+  //       if (!filteredTodoList.contains(currentTask)) {
+  //         filteredTodoList.add(currentTask);
+  //       }
+  //     }
+  //   }
+
+  //   return filteredTodoList;
+  // }
+
   void checkBoxChanged(int index) {
-    todoRepo.checkBoxChanged(index);
-    ;
-    loadData();
+    int originalIndex = todoList.indexWhere(
+        (task) => task.taskName == filteredTodoList[index].taskName);
+
+    todoRepo.cbChanged(originalIndex);
+    todoList[originalIndex].isCompleted = !todoList[originalIndex].isCompleted;
+    filterData(_selectedTags);
   }
 
   void saveNewTask() async {
@@ -115,20 +137,29 @@ class _HomePageState extends State<HomePage> {
       );
 
       if (pickedDate != null) {
-        await todoRepo.addTask(_controller.text, pickedDate);
-        loadData();
+        await todoRepo.add(_controller.text, pickedDate);
+        todoList.add(Todo(
+            taskName: _controller.text,
+            isCompleted: false,
+            isEdit: false,
+            dueDate: pickedDate));
 
+        filterData(_selectedTags);
         _controller.clear();
       }
     }
   }
 
   void deleteTask(int index) async {
-    await todoRepo.deleteTask(index);
-    loadData();
+    int originalIndex = todoList.indexWhere(
+        (task) => task.taskName == filteredTodoList[index].taskName);
+    await todoRepo.delete(originalIndex);
+    todoList.removeAt(originalIndex);
+
+    filterData(_selectedTags);
   }
 
-  void editTask(int index) async {
+  void editDate(int index) async {
     DateTime? pickedDate = await showDatePicker(
       context: context,
       firstDate: DateTime(2024, 3, 18),
@@ -136,14 +167,21 @@ class _HomePageState extends State<HomePage> {
     );
 
     if (pickedDate != null) {
-      await todoRepo.editTask(index, pickedDate);
+      await todoRepo.editDate(index, pickedDate);
+      todoList[index].isEdit = true;
+      todoList[index].dueDate = pickedDate;
+      filterData(_selectedTags);
     }
-    loadData();
   }
 
-  void saveTask(String taskName, int index) async {
-    await todoRepo.saveTask(taskName, index);
-    loadData();
+  void editName(String taskName, int index) async {
+    int originalIndex = todoList.indexWhere(
+        (task) => task.taskName == filteredTodoList[index].taskName);
+    await todoRepo.editName(taskName, index);
+    todoList[originalIndex].taskName = taskName;
+    todoList[originalIndex].isEdit = false;
+
+    filterData(_selectedTags);
   }
 
   @override
@@ -186,6 +224,7 @@ class _HomePageState extends State<HomePage> {
                         selected: _selectedTags.contains(tag),
                         onSelected: (isSelected) {
                           _toggleTag(tag);
+                          filterData(_selectedTags);
                           Navigator.pop(context); // Popup'u kapatır
                         },
                         backgroundColor:
@@ -222,6 +261,7 @@ class _HomePageState extends State<HomePage> {
               onDateChange: (date) {
                 setState(() {
                   _selectedDate = date;
+                  filterData(_selectedTags);
                 });
               },
             ),
@@ -235,10 +275,9 @@ class _HomePageState extends State<HomePage> {
                 } else if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 } else if (snapshot.hasData) {
-                  filteredTodoList =
-                      createFilteredList(_selectedTags, snapshot.data!);
+                  List<Todo>? fList = snapshot.data;
 
-                  if (filteredTodoList.isEmpty) {
+                  if (fList!.isEmpty) {
                     return Center(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -262,9 +301,9 @@ class _HomePageState extends State<HomePage> {
                   }
 
                   return ListView.builder(
-                    itemCount: filteredTodoList.length,
+                    itemCount: fList.length,
                     itemBuilder: (BuildContext context, index) {
-                      final Todo task = filteredTodoList[index];
+                      final Todo task = fList[index];
                       final int originalIndex = snapshot.data!.indexOf(task);
 
                       return ToDoList(
@@ -274,9 +313,9 @@ class _HomePageState extends State<HomePage> {
                         dueDate: task.dueDate,
                         onChanged: (value) => checkBoxChanged(originalIndex),
                         deleteFunction: (context) => deleteTask(originalIndex),
-                        editFunction: (context) => editTask(originalIndex),
+                        editFunction: (context) => editDate(originalIndex),
                         saveFunction: (newTaskName) =>
-                            saveTask(newTaskName, originalIndex),
+                            editName(newTaskName, originalIndex),
                         editController: TextEditingController(),
                       );
                     },

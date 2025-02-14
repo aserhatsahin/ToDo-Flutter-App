@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:core';
 
 import 'package:animated_text_kit/animated_text_kit.dart';
@@ -19,6 +20,8 @@ class _HomePageState extends State<HomePage> {
   DateTime _selectedDate = DateTime.now();
   final _controller = TextEditingController();
   final spRepo todoRepo = spRepo();
+  final StreamController<List<Todo>> _taskController =
+      StreamController.broadcast();
 
   List<Todo> todo = [
     Todo(
@@ -54,11 +57,21 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Future<List<Todo>> loadData() async {
-    await Future.delayed(Duration(seconds: 1));
+  @override
+  void initState() {
+    super.initState();
+    loadData();
+  }
+
+  @override
+  void dispose() {
+    _taskController.close();
+    super.dispose();
+  }
+
+  void loadData() async {
     List<Todo> loadedTodos = await todoRepo.getAll();
-    print("Loaded Todos from SharedPreferences: $loadedTodos");
-    return await todoRepo.getAll();
+    _taskController.sink.add(loadedTodos);
   }
 
   List<Todo> createFilteredList(List<String> selTags, List<Todo> snapshotList) {
@@ -89,7 +102,7 @@ class _HomePageState extends State<HomePage> {
 
   void checkBoxChanged(int index) {
     todoRepo.cbChanged(index);
-    setState(() {});
+    ;
   }
 
   void saveNewTask() async {
@@ -103,7 +116,7 @@ class _HomePageState extends State<HomePage> {
       if (pickedDate != null) {
         await todoRepo.add(_controller.text, pickedDate);
         loadData();
-        setState(() {});
+
         _controller.clear();
       }
     }
@@ -111,7 +124,7 @@ class _HomePageState extends State<HomePage> {
 
   void deleteTask(int index) async {
     await todoRepo.delete(index);
-    setState(() {});
+    loadData();
   }
 
   void editDate(int index) async {
@@ -123,13 +136,13 @@ class _HomePageState extends State<HomePage> {
 
     if (pickedDate != null) {
       await todoRepo.editDate(index, pickedDate);
-      setState(() {});
     }
+    loadData();
   }
 
   void editName(String taskName, int index) async {
     await todoRepo.editName(taskName, index);
-    setState(() {});
+    loadData();
   }
 
   @override
@@ -213,8 +226,8 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           Expanded(
-            child: FutureBuilder<List<Todo>>(
-              future: loadData(),
+            child: StreamBuilder<List<Todo>>(
+              stream: _taskController.stream,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(child: CircularProgressIndicator());
