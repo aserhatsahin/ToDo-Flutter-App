@@ -2,13 +2,13 @@ import 'dart:async';
 import 'dart:core';
 
 import 'package:animated_text_kit/animated_text_kit.dart';
+
 import 'package:flutter/material.dart';
 import 'package:date_picker_timeline/date_picker_timeline.dart';
-import 'package:todo_list_app/repository/spRepo.dart';
+import 'package:todo_list_app/repository/firebaseRepo.dart';
 import 'package:todo_list_app/utils/todo_list.dart';
 import 'package:todo_list_app/classes/todo.dart';
 
-//NULL SAFETY , FUTUREBUILDER
 class HomePage extends StatefulWidget {
   HomePage({super.key});
 
@@ -19,7 +19,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   DateTime _selectedDate = DateTime.now();
   final _controller = TextEditingController();
-  final spRepo todoRepo = spRepo();
+  final firebaseRepo todoRepo = firebaseRepo();
 
   final StreamController<List<Todo>> _taskController =
       StreamController.broadcast();
@@ -49,7 +49,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    loadData();
+    connectStreams();
   }
 
   @override
@@ -58,10 +58,14 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  void loadData() async {
-    todoList = await todoRepo.getAll();
-    print(" first loaded list: $todoList");
-    filterData(_selectedTags);
+  void connectStreams() async {
+    todoRepo.getAllStream().listen((newlist) {
+      //listen kullanma sebebimiz firebaseden gelen veriyi  surekli dinlemesini saglamak
+      todoList = newlist;
+      filterData(_selectedTags);
+
+      print(" first loaded list: $todoList");
+    });
   }
 
   void filterData(List<String> selTags) async {
@@ -72,6 +76,12 @@ class _HomePageState extends State<HomePage> {
 
     for (int i = 0; i < todoList.length; i++) {
       Todo currentTask = todoList[i];
+      // DateTime taskDueDate;
+      // if (currentTask.dueDate is Timestamp) {
+      //   taskDueDate = (currentTask.dueDate as Timestamp).toDate();
+      // } else {
+      //   taskDueDate = currentTask.dueDate;
+      // }
 
       bool isDateMatch = currentTask.dueDate.year == _selectedDate.year &&
           currentTask.dueDate.month == _selectedDate.month &&
@@ -119,12 +129,8 @@ class _HomePageState extends State<HomePage> {
   //   return filteredTodoList;
   // }
 
-  void checkBoxChanged(int index) {
-    int originalIndex = todoList.indexWhere(
-        (task) => task.taskName == filteredTodoList[index].taskName);
-
-    todoRepo.cbChanged(originalIndex);
-    todoList[originalIndex].isCompleted = !todoList[originalIndex].isCompleted;
+  void checkBoxChanged(String docId) {
+    todoRepo.cbChanged(docId);
     filterData(_selectedTags);
   }
 
@@ -138,11 +144,11 @@ class _HomePageState extends State<HomePage> {
 
       if (pickedDate != null) {
         await todoRepo.add(_controller.text, pickedDate);
-        todoList.add(Todo(
-            taskName: _controller.text,
-            isCompleted: false,
-            isEdit: false,
-            dueDate: pickedDate));
+        // todoList.add(Todo(
+        //     taskName: _controller.text,
+        //     isCompleted: false,
+        //     isEdit: false,
+        //     dueDate: pickedDate));
 
         filterData(_selectedTags);
         _controller.clear();
@@ -150,16 +156,13 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void deleteTask(int index) async {
-    int originalIndex = todoList.indexWhere(
-        (task) => task.taskName == filteredTodoList[index].taskName);
-    await todoRepo.delete(originalIndex);
-    todoList.removeAt(originalIndex);
+  void deleteTask(String docId) async {
+    await todoRepo.delete(docId);
 
     filterData(_selectedTags);
   }
 
-  void editDate(int index) async {
+  void editDate(String docId) async {
     DateTime? pickedDate = await showDatePicker(
       context: context,
       firstDate: DateTime(2024, 3, 18),
@@ -167,19 +170,14 @@ class _HomePageState extends State<HomePage> {
     );
 
     if (pickedDate != null) {
-      await todoRepo.editDate(index, pickedDate);
-      todoList[index].isEdit = true;
-      todoList[index].dueDate = pickedDate;
+      await todoRepo.editDate(docId, pickedDate);
+
       filterData(_selectedTags);
     }
   }
 
-  void editName(String taskName, int index) async {
-    int originalIndex = todoList.indexWhere(
-        (task) => task.taskName == filteredTodoList[index].taskName);
-    await todoRepo.editName(taskName, index);
-    todoList[originalIndex].taskName = taskName;
-    todoList[originalIndex].isEdit = false;
+  void editName(String taskName, String docId) async {
+    await todoRepo.editName(taskName, docId);
 
     filterData(_selectedTags);
   }
@@ -304,18 +302,18 @@ class _HomePageState extends State<HomePage> {
                     itemCount: fList.length,
                     itemBuilder: (BuildContext context, index) {
                       final Todo task = fList[index];
-                      final int originalIndex = snapshot.data!.indexOf(task);
+                      final String docId = task.id;
 
                       return ToDoList(
                         taskName: task.taskName,
                         taskCompleted: task.isCompleted,
                         taskEdit: task.isEdit,
                         dueDate: task.dueDate,
-                        onChanged: (value) => checkBoxChanged(originalIndex),
-                        deleteFunction: (context) => deleteTask(originalIndex),
-                        editFunction: (context) => editDate(originalIndex),
+                        onChanged: (value) => checkBoxChanged(docId),
+                        deleteFunction: (context) => deleteTask(docId),
+                        editFunction: (context) => editDate(docId),
                         saveFunction: (newTaskName) =>
-                            editName(newTaskName, originalIndex),
+                            editName(newTaskName, docId),
                         editController: TextEditingController(),
                       );
                     },

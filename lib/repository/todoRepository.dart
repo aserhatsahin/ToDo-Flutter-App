@@ -1,17 +1,16 @@
+
 import 'package:todo_list_app/classes/todo.dart';
 
 abstract class todoRepository {
-  Future<List<Todo>> getAll();
-
-  Future<void> saveAll(List<Todo> todo);
-
-  Future<void> cbChanged(int index);
+ Future<List<Todo>> getAll();
+Stream<List<Todo>> getAllStream();
+  Future<void> cbChanged(String docId);
 
   Future<void> add(String task, DateTime dueDate);
 
-  Future<void> delete(int index);
+  Future<void> delete(String docId);
 
-  Future<void> editDate(int index,DateTime dueDate);
+  Future<void> editDate(String docId, DateTime dueDate);
 
-  Future<void> editName(String name, int index);
+  Future<void> editName(String name, String docId);
 }

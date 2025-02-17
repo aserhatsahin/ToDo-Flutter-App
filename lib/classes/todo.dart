@@ -3,12 +3,13 @@ class Todo {
   bool isCompleted;
   bool isEdit;
   DateTime dueDate;
-
+  String id;
   Todo(
       {required this.taskName,
       this.isCompleted = false,
       this.isEdit = false,
-      required this.dueDate});
+      required this.dueDate,
+      required this.id});
 
   @override
   String toString() {
@@ -26,5 +27,6 @@ class Todo {
       : taskName = json['taskName'] as String,
         isCompleted = json['isCompleted'] as bool,
         isEdit = json['isEdit'] as bool,
-        dueDate = DateTime.parse(json['dueDate']);
+        dueDate = DateTime.parse(json['dueDate']),
+        id = json['id'] as String;
 }

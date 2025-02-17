@@ -22,8 +22,6 @@ class spRepo extends todoRepository {
     return [];
   }
 
-  
-  @override
   Future<void> saveAll(List<Todo> todo) async {
     //to store into SharedPreferences
     //convert the list into JSON format and than List<String> format , than store in SharedPreferences
@@ -39,43 +37,59 @@ class spRepo extends todoRepository {
   }
 
   @override
-  Future<void> cbChanged(int index) async {
+  Future<void> cbChanged(String id) async {
     //to change checkbox
     List<Todo> todoList = await getAll();
-
+    int index = int.parse(id);
     todoList[index].isCompleted = !todoList[index].isCompleted;
     saveAll(todoList);
   }
-@override
+
+  @override
   Future<void> add(String task, DateTime dueDate) async {
     if (task != '') {
       List<Todo> todoList = await getAll();
       todoList.add(Todo(
-          taskName: task, isCompleted: false, isEdit: false, dueDate: dueDate));
+          taskName: task,
+          isCompleted: false,
+          isEdit: false,
+          dueDate: dueDate,
+          id: " "));
       print("TASK ADDED SUCCESFULLY ");
       saveAll(todoList);
     }
   }
-@override
-  Future<void> delete(int index) async {
+
+  @override
+  Future<void> delete(String id) async {
     List<Todo> todoList = await getAll();
+
+    int index = int.parse(id);
     todoList.removeAt(index);
 
     saveAll(todoList);
   }
-@override
-  Future<void> editDate(int index, DateTime dueDate) async {
+
+  Future<void> editDate(String id, DateTime dueDate) async {
     List<Todo> todoList = await getAll();
+    int index = int.parse(id);
     todoList[index].isEdit = true;
     todoList[index].dueDate = dueDate;
     saveAll(todoList);
   }
-@override
-  Future<void> editName(String taskName, int index) async {
+
+  Future<void> editName(String taskName, String id) async {
+    int index = int.parse(id);
     List<Todo> todoList = await getAll();
     todoList[index].taskName = taskName;
     todoList[index].isEdit = false;
 
     saveAll(todoList);
+  }
+
+  @override
+  Stream<List<Todo>> getAllStream() {
+    // TODO: implement getAllStream
+    throw UnimplementedError();
   }
 }
