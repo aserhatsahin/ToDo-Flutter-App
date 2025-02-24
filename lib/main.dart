@@ -1,5 +1,9 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:todo_list_app/auth/auth_gate.dart';
+
+import 'package:todo_list_app/core/theme/theme.dart';
+
 // ignore: unused_import
 import 'package:todo_list_app/pages/home_page_sb.dart';
 
@@ -18,7 +22,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: HomePage(),
+      theme: AppTheme.lightThemeMode,
+      home: AuthGate(),
     );
   }
 }

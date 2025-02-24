@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:core';
 
 import 'package:animated_text_kit/animated_text_kit.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:flutter/material.dart';
 import 'package:date_picker_timeline/date_picker_timeline.dart';
+import 'package:todo_list_app/auth/auth_service.dart';
 import 'package:todo_list_app/repository/firebaseRepo.dart';
 import 'package:todo_list_app/utils/todo_list.dart';
 import 'package:todo_list_app/classes/todo.dart';
@@ -20,9 +22,11 @@ class _HomePageState extends State<HomePage> {
   DateTime _selectedDate = DateTime.now();
   final _controller = TextEditingController();
   final firebaseRepo todoRepo = firebaseRepo();
-
+  final authService = AuthService();
   final StreamController<List<Todo>> _taskController =
       StreamController.broadcast();
+  final CollectionReference todos =
+      FirebaseFirestore.instance.collection("Todo");
 
   List<Todo> todoList = [];
   List<Todo> filteredTodoList = [];
@@ -46,6 +50,17 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  void logout() {
+//get auth service
+    final auth = AuthService();
+    auth.signOut();
+  }
+
+  // Future<String> getUID() async {
+  //   String uid = await authService.getCurrentUID();
+  //   return uid;
+  // }
+
   @override
   void initState() {
     super.initState();
@@ -59,7 +74,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void connectStreams() async {
-    todoRepo.getAllStream().listen((newlist) {
+    await todoRepo.getAllStream().listen((newlist) {
       //listen kullanma sebebimiz firebaseden gelen veriyi  surekli dinlemesini saglamak
       todoList = newlist;
       filterData(_selectedTags);
@@ -193,7 +208,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             Container(
               alignment: Alignment.center,
-              padding: EdgeInsets.fromLTRB(80, 20, 50, 20),
+              padding: EdgeInsets.fromLTRB(130, 20, 30, 20),
               child: Text(
                 'Simple Todo',
                 style: TextStyle(
@@ -235,6 +250,7 @@ class _HomePageState extends State<HomePage> {
               ];
             },
           ),
+          IconButton(onPressed: authService.signOut, icon: Icon(Icons.logout)),
         ],
         centerTitle: true,
         backgroundColor: Color(0xFF7A3B69),
