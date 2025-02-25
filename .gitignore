@@ -3,7 +3,6 @@
 *.log
 *.pyc
 *.swp
-.vscode
 .DS_Store
 .atom/
 .build/
@@ -12,11 +11,6 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
-
-# generated folders
-ios/
-android/
-
 
 # IntelliJ related
 *.iml
